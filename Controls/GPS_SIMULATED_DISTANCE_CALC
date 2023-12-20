@@ -1,0 +1,126 @@
+#include <iostream>
+#include <cmath>
+
+using namespace std;
+
+static double haversine(double lat_1, double lon_1, double lat_2, double lon_2) {
+    double dLat = (lat_2 - lat_1) *
+                  M_PI / 180.0;
+    double dLon = (lon_2 - lon_1) *
+                  M_PI / 180.0;
+
+    lat_1 = (lat_1) * M_PI / 180.0;
+    lat_2 = (lat_2) * M_PI / 180.0;
+
+    double a = pow(sin(dLat / 2), 2) +
+               pow(sin(dLon / 2), 2) *
+               cos(lat_1) * cos(lat_2);
+
+    double rad = 6371;
+    double c = 2 * asin(sqrt(a));
+    return rad * c;
+}
+
+double distance_interp(double a, double b, double t) {
+    return a + t * ( b - a );
+}
+
+int main() {
+    int i = 1;
+
+    double t = 0.0;
+
+    double lat_start;
+    double lon_start;
+    double lat_end;
+    double lon_end;
+    double mph;
+
+    // example starting latitude: 33.278578;
+    // example starting longitude: -87.292171;
+    // example ending latitude: 34.7342125;
+    // example ending longitude: -86.6396608;
+    // example average speed: 17.50
+
+    cout << "Enter a starting latitude: " << endl;
+    cin >> lat_start;
+    cout << "Enter a starting longitude: " << endl;
+    cin >> lon_start;
+    cout << "Enter an ending latitude: " << endl;
+    cin >> lat_end;
+    cout << "Enter an ending longitude: " <<endl;
+    cin >> lon_end;
+    cout << "Enter the average speed your aircraft will be travelling at in mi/h: " << endl;
+    cin >> mph;
+
+
+    double haversine_km = haversine(lat_start, lon_start, lat_end, lon_end);
+    double haversine_nmi = haversine_km * 0.621371;
+
+    const double total_distance = haversine_nmi;
+    double flight_hours = total_distance / mph;
+
+    cout << "--------------------------" << endl;
+    cout << "       Total Distance     " << endl;
+    cout << "--------------------------" << endl;
+
+    cout << haversine_km << " KM." << endl;
+    cout << haversine_nmi << " N-MI." << endl;
+    cout << endl;
+
+    cout << "--------------------------" << endl;
+    cout << " Simulated Distance Gain  " << endl;
+    cout << "--------------------------" << endl;
+
+    while(true) {
+
+        double interp_lat = distance_interp(lat_start,lat_end,(t/flight_hours));
+        double interp_lon = distance_interp(lon_start,lon_end,(t/flight_hours));
+
+        double haversine_interp_km = haversine(interp_lat, interp_lon, lat_end, lon_end);
+        double haversine_interp_nmi = haversine_interp_km * 0.621371;
+
+        cout << i << ".) " << haversine_interp_km << " KM / " << haversine_interp_nmi << " N-MI." << endl;\
+        cout << endl;
+
+        if (i == 1000) {
+            cout << "--------------------------" << endl;
+            cout << "    FAILSAFE ACTIVATED:   " << endl;
+            cout << "    TOO MANY ITERATIONS   " << endl;
+            cout << "    SIMULATION EXITING... " << endl;
+            cout << "--------------------------" << endl;
+            break;
+        } else if(haversine_interp_nmi < 1 && haversine_interp_km < 1) {
+
+            cout << "--------------------------" << endl;
+            cout << "   Simulation Complete    " << endl;
+            cout << "--------------------------" << endl;
+            cout << endl;
+            cout << "--------------------------" << endl;
+            cout << "     Data from flight:    " << endl;
+            cout << "--------------------------" << endl;
+            cout << endl;
+
+            double hours_part = flight_hours - floor(flight_hours);
+            double hours = flight_hours - hours_part;
+
+            double total_min = hours_part * 60;
+            double minutes_part = total_min - floor(total_min);
+            double minutes = total_min - minutes_part;
+
+            double total_sec = minutes_part * 60;
+            double seconds_part = total_sec - floor(total_sec);
+            double seconds = total_sec - seconds_part;
+
+            double total_ms = seconds_part * 60;
+            double milliseconds = round(total_ms);
+
+            cout << "Time Flown: " << hours << " hours " << minutes << " min " << seconds << " sec " << milliseconds << " ms" << endl;
+            cout << "Distance Traveled: " << haversine_nmi << " N-MI / " << haversine_km << " KM"<< endl;
+            cout << "Average speed: " << mph << " mi/h" << endl;
+            break;
+        }
+        i += 1;
+        t += 0.1;
+    }
+}
